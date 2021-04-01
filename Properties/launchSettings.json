@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Perceptron": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\rogo9\\Downloads\\iris-copy.csv"
+    }
+  }
+}
