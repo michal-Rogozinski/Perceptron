@@ -7,49 +7,68 @@ namespace Perceptron
 {
     public static class Program
     {
-        static readonly int ITERATION_COUNT = 50;
-        static readonly double LAMBDA = 0.1;
 
         static void Main(string[] args)
         {
+            int ITERATION_COUNT = 1;
+            double LAMBDA = Double.Parse(args[2], CultureInfo.InvariantCulture);
+
             Random rng = new Random(Guid.NewGuid().GetHashCode());
             int seed = rng.Next();
+
             //Datalist prep
             List<List<double>> data1 = new List<List<double>>();
-            List<List<double>> data2 = new List<List<double>>();
-            List<List<double>> data3 = new List<List<double>>();
+            List<List<double>> tData = new List<List<double>>();
             List<int> labels1 = new List<int>();
-            List<int> labels2 = new List<int>();
-            List<int> labels3 = new List<int>();
+            List<int> tLabels = new List<int>();
             List<int> res1 = new List<int>();
-            List<int> res2 = new List<int>();
-            List<int> res3 = new List<int>();
-            //Linear order file parsing and shuffling
+
+            //Linear order file parsing and shuffling. Last integer stands for file mode - 0 is setosa and versicolor,1 is setosa and virginica,2 is virginica and versicolor
+
             parseFile(args[0], data1, labels1,0);
-            parseFile(args[0], data2, labels2,1);
-            parseFile(args[0], data3, labels3,2);
+            parseFile(args[1], tData, tLabels,0);
+
+            double[] weightsList = new double[tData[0].Count];
+            Shuffle(tData, seed);
+            Shuffle(tLabels, seed);
+            weightsList = setWeights(tData, tLabels, ITERATION_COUNT, LAMBDA);
+
             Console.WriteLine("**********************END OF DATA PARSE************************");
+
             Shuffle(data1,seed);
-            Shuffle(data2,seed);
-            Shuffle(data3,seed);
             Shuffle(labels1,seed);
-            Shuffle(labels2,seed);
-            Shuffle(labels3,seed);
-            /*Console.WriteLine("**********************TABLE 1************************");
-            Print2DTable(data1);
-            Console.WriteLine("**********************TABLE 2************************");
-            Print2DTable(data2);
-            Console.WriteLine("**********************TABLE 3************************");
-            Print2DTable(data3);*/
+
             //Computation
-            res1 = Neuron(data1,labels1);
-            res2 = Neuron(data2,labels2);
-            res3 = Neuron(data3,labels3);
+            res1 = Neuron(data1,labels1,weightsList);
+
             //Output
             Console.WriteLine("**********************FINAL TABLE************************");
             printResult(res1,labels1,0);
-            printResult(res2,labels2,1);
-            printResult(res3,labels3,2);
+
+            //Manual testing
+            Console.WriteLine("*********************************************************");
+            double[] manual = new double[weightsList.Length];
+            Boolean runnning = true;
+            while (runnning)
+            {
+                Console.WriteLine("Enter data for manual testing. Current length of vector is : " + weightsList.Length);
+                for (int i = 0; i < weightsList.Length; i++)
+                {
+                    Console.WriteLine("Enter parameter no. " + i);
+                    manual[i] = Double.Parse(Console.ReadLine(), CultureInfo.InvariantCulture);
+                }
+                ManualNeuron(manual, weightsList, 0);
+                Console.WriteLine("Do you want to continue ?");
+                string choice = Console.ReadLine();
+                if(choice.Equals("yes") || choice.Equals("y"))
+                {
+                    continue;
+                }
+                if (choice.Equals("no") || choice.Equals("n"))
+                {
+                    runnning = false;
+                }
+            }
         }
         public static void parseFile(String path,List<List<double>> dataSet,List<int> labelsSet,int splitOpt)
         {
@@ -109,7 +128,7 @@ namespace Perceptron
                     }
                     if (splitOpt == 2)
                     {
-                        if (split[split.Length - 1].Equals("Iris - virginica"))
+                        if (split[split.Length - 1].Equals("Iris-versicolor"))
                         {
                             for (int i = 0; i < split.Length - 1; i++)
                             {
@@ -117,7 +136,7 @@ namespace Perceptron
                             }
                             labelsSet.Add(0);
                         }
-                        else if (split[split.Length - 1].Equals("Iris-versicolor"))
+                        else if (split[split.Length - 1].Equals("Iris-virginica"))
                         {
                             for (int i = 0; i < split.Length - 1; i++)
                             {
@@ -181,7 +200,7 @@ namespace Perceptron
             }
             double[] weights = new double[attNum];
             double y;
-            weightInitalization(weights, 0.0);
+            weightInitalization(weights, 1.0);
 
             for(int i = 0;i < iterNum; i++)
             {
@@ -201,21 +220,11 @@ namespace Perceptron
             }
             return weights;
         }
-        public static List<int> Neuron(List<List<double>> dataSet, List<int> labels)
+        public static List<int> Neuron(List<List<double>> dataSet, List<int> labels,double[] weightList)
         {
             List<List<double>> data1 = dataSet;
-            List<List<double>> data2 = new List<List<double>>();
-            List<int> testLabelsList = new List<int>();
-            double[] weight = new double[data1[0].Count];
+            double[] weight = weightList;
             double acc = 0.0d;
-
-            for (int i = 0;i < dataSet.Count / 4; i++)
-            {
-                data2.Add(dataSet[i]);
-                testLabelsList.Add(labels[i]);
-            }
-
-            weight = setWeights(data2, testLabelsList,ITERATION_COUNT, LAMBDA);
 
             string weights = null;
             foreach(double i in weight)
@@ -251,8 +260,55 @@ namespace Perceptron
 
             return outLabels;
         }
+        public static void ManualNeuron(double[] list,double[] weightList,int op)
+        {
+            double y = 0;
+            for(int j = 0;j < weightList.Length; j++)
+            {
+                y += weightList[j] * list[j];
+            }
+            y = sign(y);
+            if(op == 0)
+            {
+                if(y == 0)
+                {
+                    Console.WriteLine("Manual input result : " + sign(y) + " Iris-setosa");
+                }
+                if(y == 1)
+                {
+                    Console.WriteLine("Manual input result : " + sign(y) + " Iris-versicolor");
+
+                }
+            }
+            if (op == 1)
+            {
+                if (y == 0)
+                {
+                    Console.WriteLine("Manual input result : " + sign(y) + " Iris-setosa");
+                }
+                if (y == 1)
+                {
+                    Console.WriteLine("Manual input result : " + sign(y) + " Iris-virginica");
+
+                }
+            }
+            if (op == 2)
+            {
+                if (y == 0)
+                {
+                    Console.WriteLine("Manual input result : " + sign(y) + " Iris-versicolor");
+                }
+                if (y == 1)
+                {
+                    Console.WriteLine("Manual input result : " + sign(y) + " Iris-virginica");
+
+                }
+            }
+        }
         public static void printResult(List<int> list,List<int> checkList,int op)
         {
+            double res1 = 0.0d;
+            double res2 = 0.0d;
             if (op == 0)
             {
                 Console.WriteLine("Mode 1 - 0 : Iris-setosa | 1 : Iris-versicolor");
@@ -262,16 +318,19 @@ namespace Perceptron
                     if (list[i] == 0 && list[i] == checkList[i])
                     {
                         Console.WriteLine("Result at entry : "+ (i + 1) + " - " + "Iris-setosa");
+                        res1++;
                     }
                     else if(list[i] == 1 && list[i] == checkList[i])
                     {
                         Console.WriteLine("Result at entry : " + (i + 1) + " - " + "Iris-versicolor");
+                        res2++;
                     }
                     else
                     {
                         Console.WriteLine("Failed match");
                     }
                 }
+                Console.WriteLine("Accuracy for Iris-setosa : " + (double)(res1 / list.Count) + " ,accuracy for Iris-versicolor : " + (double)(res2 / list.Count));
             }
             if (op == 1)
             {
@@ -282,16 +341,19 @@ namespace Perceptron
                     if (list[i] == 0 && list[i] == checkList[i])
                     {
                         Console.WriteLine("Result at entry : " + (i+1) + " - " + "Iris-setosa");
+                        res1++;
                     }
                     else if(list[i] == 1 && list[i] == checkList[i])
                     {
                         Console.WriteLine("Result at entry : " + (i + 1) + " - " + "Iris-virginica");
+                        res2++;
                     }
                     else
                     {
                         Console.WriteLine("Failed match");
                     }
                 }
+                Console.WriteLine("Accuracy for Iris-setosa : " + (double)(res1 / list.Count) + " ,accuracy for Iris-virginica : " + (double)(res2 / list.Count));
             }
             if (op == 2)
             {
@@ -302,16 +364,19 @@ namespace Perceptron
                     if (list[i] == 0 && list[i] == checkList[i])
                     {
                         Console.WriteLine("Result at entry : " + (i + 1) + " - " + "Iris-virginica");
+                        res1++;
                     }
                     else if(list[i] == 1 && list[i] == checkList[i])
                     {
-                        Console.WriteLine("Result at entry : " + (i + 1) + " - " + "Iris - versicolor");
+                        Console.WriteLine("Result at entry : " + (i + 1) + " - " + "Iris-versicolor");
+                        res2++;
                     }
                     else
                     {
                         Console.WriteLine("Failed match");
                     }
                 }
+                Console.WriteLine("Accuracy for Iris-virginica : " + (double)(res1 / list.Count) + " ,accuracy for Iris-versicolor : " + (double)(res2 / list.Count));
             }
         }
         public static void Shuffle<T>(IList<T> list,int seed)
@@ -326,23 +391,6 @@ namespace Perceptron
                 list[k] = list[n];
                 list[n] = value;
             }
-        }
-        public static int[,] consolidate(List<int> n1,List<int> n2,List<int> n3,int length)
-        {
-            int[,] output = new int[length, 3];
-            for(int i = 0;i < n1.Count; i++)
-            {
-                output[i, 0] = n1[i];
-            }
-            for (int i = 0; i < n2.Count; i++)
-            {
-                output[i, 1] = n1[i];
-            }
-            for (int i = 0; i < n3.Count; i++)
-            {
-                output[i, 2] = n1[i];
-            }
-            return output;
         }
     }
 }

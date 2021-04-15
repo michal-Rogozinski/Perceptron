@@ -2,7 +2,7 @@
   "profiles": {
     "Perceptron": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\rogo9\\Downloads\\iris-copy.csv"
+      "commandLineArgs": "C:\\Users\\rogo9\\Downloads\\iris-trim.csv C:\\Users\\rogo9\\Downloads\\iris-copy.csv  0.3"
     }
   }
 }
